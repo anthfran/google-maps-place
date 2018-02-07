@@ -1,0 +1,36 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<dom-module id="google-maps-place">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+    <h2>Hello [[prop1]]!</h2>
+  </template>
+
+  <script>
+    /**
+     * `google-maps-place`
+     * Displays Google Maps Place data
+     *
+     * @customElement
+     * @polymer
+     * @demo demo/index.html
+     */
+    class GoogleMapsPlace extends Polymer.Element {
+      static get is() { return 'google-maps-place'; }
+      static get properties() {
+        return {
+          prop1: {
+            type: String,
+            value: 'google-maps-place'
+          }
+        };
+      }
+    }
+
+    window.customElements.define(GoogleMapsPlace.is, GoogleMapsPlace);
+  </script>
+</dom-module>
