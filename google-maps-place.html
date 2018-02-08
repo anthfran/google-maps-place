@@ -1,5 +1,4 @@
 <link rel="import" href="../polymer/polymer-element.html">
-<link rel="import" href="./xhr-promise.html">
 
 <dom-module id="google-maps-place">
   <template>
@@ -49,16 +48,22 @@
         .then(thisElement.__status)
         .then(thisElement.__json)
         .then((resPlace)=>{
-          console.log(resPlace);
           let photoReferenceUrl = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&key=" + thisElement.key + "&photoreference=" + resPlace.result.photos[0].photo_reference;
           thisElement.$.photo.src = photoReferenceUrl;
         })
         .catch(function(error) {
-          console.log('Request failed', error);
+          console.error('Request failed', error);
         });
       }
       __json(response) {
         return response.json()
+        .then((jsonResponse)=>{
+          if (jsonResponse.status=="REQUEST_DENIED") {
+            throw new Error(jsonResponse.error_message);
+          } else {
+            return jsonResponse;
+          }
+        });
       }
       __status(response) {
         if (response.status >= 200 && response.status < 300) {
