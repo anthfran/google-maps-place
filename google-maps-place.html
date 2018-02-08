@@ -27,24 +27,14 @@
         return {
           key: {
             type: String,
-            observer: '_callApiChain'
+            observer: '__callApiChain'
           },
           query: {
             type: String
           }
         };
       }
-      __status(response) {
-        if (response.status >= 200 && response.status < 300) {
-          return Promise.resolve(response)
-        } else {
-          return Promise.reject(new Error(response.statusText))
-        }
-      }
-      __json(response) {
-        return response.json()
-      }
-      _callApiChain() {
+      __callApiChain() {
         const thisElement = this;
         const options = { method: 'GET', mode: 'cors', headers: { Accept: 'application/json' }};
 
@@ -66,6 +56,16 @@
         .catch(function(error) {
           console.log('Request failed', error);
         });
+      }
+      __json(response) {
+        return response.json()
+      }
+      __status(response) {
+        if (response.status >= 200 && response.status < 300) {
+          return Promise.resolve(response)
+        } else {
+          return Promise.reject(new Error(response.statusText))
+        }
       }
     }
 
