@@ -1,4 +1,5 @@
 <link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="./xhr-promise.html">
 
 <dom-module id="google-maps-place">
   <template>
@@ -7,6 +8,7 @@
         display: block;
       }
     </style>
+    <xhr-promise id="xhr"></xhr-promise>
     <img id="photo"></img>
   </template>
 
@@ -23,57 +25,46 @@
       static get is() { return 'google-maps-place'; }
       static get properties() {
         return {
-          apiKey: {
+          key: {
             type: String,
-            observer: '_callAPI'
+            observer: '_callApiChain'
           },
           query: {
             type: String
           }
         };
       }
-      _callAPI(){
-        const thisElement = this;
-        let url = "https://maps.googleapis.com/maps/api/place/textsearch/json?"
-        url = url + "key=" + thisElement.apiKey;
-        url = url + "&query=" + thisElement.query;
-        thisElement.__makeRequest(url)
-        .then(function (searchTextString) {
-          let searchTextObj = JSON.parse(searchTextString);
-          let placeUrl = "https://maps.googleapis.com/maps/api/place/details/json?key=" + thisElement.apiKey + "&placeid=" + searchTextObj.results[0].place_id;
-          return thisElement.__makeRequest(placeUrl);
-        })
-        .then(function(searchPlaceString) {
-          let searchPlaceObj = JSON.parse(searchPlaceString);
-          let photoUrl = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&key=" + thisElement.apiKey + "&photoreference=" + searchPlaceObj.result.photos[0].photo_reference;
-          thisElement.$.photo.src = photoUrl;
-
-        })
-        .catch(function (err) {
-          console.error('Augh, there was an error!', err);
-        });
+      __status(response) {
+        if (response.status >= 200 && response.status < 300) {
+          return Promise.resolve(response)
+        } else {
+          return Promise.reject(new Error(response.statusText))
+        }
       }
-      __makeRequest (url) {
-        return new Promise(function (resolve, reject) {
-          var xhr = new XMLHttpRequest();
-          xhr.open('GET', url);
-          xhr.onload = function () {
-            if (this.status >= 200 && this.status < 300) {
-              resolve(xhr.response);
-            } else {
-              reject({
-                status: this.status,
-                statusText: xhr.statusText
-              });
-            }
-          };
-          xhr.onerror = function () {
-            reject({
-              status: this.status,
-              statusText: xhr.statusText
-            });
-          };
-          xhr.send();
+      __json(response) {
+        return response.json()
+      }
+      _callApiChain() {
+        const thisElement = this;
+        const options = { method: 'GET', mode: 'cors', headers: { Accept: 'application/json' }};
+
+        let textSearchUrl = "https://maps.googleapis.com/maps/api/place/textsearch/json?key=" + thisElement.key + "&query=" + encodeURIComponent(thisElement.query);
+        fetch(textSearchUrl, options)
+        .then(thisElement.__status)
+        .then(thisElement.__json)
+        .then((resTextSearch)=>{
+          let placeSearchUrl = "https://maps.googleapis.com/maps/api/place/details/json?key=" + thisElement.key + "&placeid=" + resTextSearch.results[0].place_id;
+          return fetch(placeSearchUrl,options)
+        })
+        .then(thisElement.__status)
+        .then(thisElement.__json)
+        .then((resPlace)=>{
+          console.log(resPlace);
+          let photoReferenceUrl = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&key=" + thisElement.key + "&photoreference=" + resPlace.result.photos[0].photo_reference;
+          thisElement.$.photo.src = photoReferenceUrl;
+        })
+        .catch(function(error) {
+          console.log('Request failed', error);
         });
       }
     }
