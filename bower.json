@@ -4,7 +4,7 @@
   "main": "google-maps-place.html",
   "dependencies": {
     "polymer": "Polymer/polymer#^2.0.0",
-    "google-apis": "GoogleWebComponents/google-apis#^2.0.1"
+    "iron-ajax": "PolymerElements/iron-ajax#^2.1.0"
   },
   "devDependencies": {
     "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^2.0.0",

@@ -7,7 +7,7 @@
         display: block;
       }
     </style>
-    <h2>Hello [[prop1]]!</h2>
+    <img id="photo"></img>
   </template>
 
   <script>
@@ -23,11 +23,58 @@
       static get is() { return 'google-maps-place'; }
       static get properties() {
         return {
-          prop1: {
+          apiKey: {
             type: String,
-            value: 'google-maps-place'
+            observer: '_callAPI'
+          },
+          query: {
+            type: String
           }
         };
+      }
+      _callAPI(){
+        const thisElement = this;
+        let url = "https://maps.googleapis.com/maps/api/place/textsearch/json?"
+        url = url + "key=" + thisElement.apiKey;
+        url = url + "&query=" + thisElement.query;
+        thisElement.__makeRequest(url)
+        .then(function (searchTextString) {
+          let searchTextObj = JSON.parse(searchTextString);
+          let placeUrl = "https://maps.googleapis.com/maps/api/place/details/json?key=" + thisElement.apiKey + "&placeid=" + searchTextObj.results[0].place_id;
+          return thisElement.__makeRequest(placeUrl);
+        })
+        .then(function(searchPlaceString) {
+          let searchPlaceObj = JSON.parse(searchPlaceString);
+          let photoUrl = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&key=" + thisElement.apiKey + "&photoreference=" + searchPlaceObj.result.photos[0].photo_reference;
+          thisElement.$.photo.src = photoUrl;
+
+        })
+        .catch(function (err) {
+          console.error('Augh, there was an error!', err);
+        });
+      }
+      __makeRequest (url) {
+        return new Promise(function (resolve, reject) {
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', url);
+          xhr.onload = function () {
+            if (this.status >= 200 && this.status < 300) {
+              resolve(xhr.response);
+            } else {
+              reject({
+                status: this.status,
+                statusText: xhr.statusText
+              });
+            }
+          };
+          xhr.onerror = function () {
+            reject({
+              status: this.status,
+              statusText: xhr.statusText
+            });
+          };
+          xhr.send();
+        });
       }
     }
 
